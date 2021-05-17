@@ -1,0 +1,8 @@
+{
+  "name": "teacher_app_camera",
+  "integrations": {
+    "capacitor": {},
+    "cordova": {}
+  },
+  "type": "angular"
+}
