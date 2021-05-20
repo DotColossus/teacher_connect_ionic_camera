@@ -12,7 +12,9 @@ export class Tab2Page {
   constructor(public photoService: PhotoService, public actionSheetController: ActionSheetController) {}
 
   async ngOnInit() {
+    //this.photoService.showLoader();
     await this.photoService.loadSaved();
+    //this.photoService.hideLoader();
   }
 
   public async showActionSheet(photo: Photo, position: number) {
@@ -30,7 +32,6 @@ export class Tab2Page {
         icon: 'close',
         role: 'cancel',
         handler: () => {
-          // Nothing to do, action sheet is automatically closed
          }
       }]
     });

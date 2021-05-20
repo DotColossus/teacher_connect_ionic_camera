@@ -18,62 +18,47 @@ export class PhotoService {
    }
 
   public async loadSaved() {
-    // Retrieve cached photo array data
     const photoList = await Storage.get({ key: this.PHOTO_STORAGE });
     this.photos = JSON.parse(photoList.value) || [];
 
-    // If running on the web...
+  
     if (!this.platform.is('hybrid')) {
-      // Display the photo by reading into base64 format
       for (let photo of this.photos) {
-        // Read each saved photo's data from the Filesystem
         const readFile = await Filesystem.readFile({
             path: photo.filepath,
             directory: FilesystemDirectory.Data
         });
       
-        // Web platform only: Load the photo as base64 data
         photo.webviewPath = `data:image/jpeg;base64,${readFile.data}`;
       }
     }
   }
 
-  /* Use the device camera to take a photo:
-  // https://capacitor.ionicframework.com/docs/apis/camera
-  
-  // Store the photo data into permanent file storage:
-  // https://capacitor.ionicframework.com/docs/apis/filesystem
-  
-  // Store a reference to all photo filepaths using Storage API:
-  // https://capacitor.ionicframework.com/docs/apis/storage
-  */
+ 
   public async addNewToGallery() {
-    // Take a photo
     const capturedPhoto = await Camera.getPhoto({
-      resultType: CameraResultType.Uri, // file-based data; provides best performance
-      source: CameraSource.Camera, // automatically take a new photo with the camera
-      quality: 100 // highest quality (0 to 100)
+      resultType: CameraResultType.Uri, 
+      source: CameraSource.Camera, 
+      quality: 100 
     });
     
     const savedImageFile = await this.savePicture(capturedPhoto);
 
-    // Add new photo to Photos array
+    
     this.photos.unshift(savedImageFile);
 
-    // Cache all photo data for future retrieval
+    
     Storage.set({
       key: this.PHOTO_STORAGE,
       value: JSON.stringify(this.photos)
     });
   }
 
-  // Save picture to file on device
+  
   private async savePicture(cameraPhoto: CameraPhoto) {
     this.showHideAutoLoader();
-    // Convert photo to base64 format, required by Filesystem API to save
     const base64Data = await this.readAsBase64(cameraPhoto);
 
-    // Write the file to the data directory
     const fileName = new Date().getTime() + '.jpeg';
     const savedFile = await Filesystem.writeFile({
       path: fileName,
@@ -82,16 +67,12 @@ export class PhotoService {
     });
 
     if (this.platform.is('hybrid')) {
-      // Display the new image by rewriting the 'file://' path to HTTP
-      // Details: https://ionicframework.com/docs/building/webview#file-protocol
       return {
         filepath: savedFile.uri,
         webviewPath: Capacitor.convertFileSrc(savedFile.uri),
       };
     }
     else {
-      // Use webPath to display the new image instead of base64 since it's 
-      // already loaded into memory
       return {
         filepath: fileName,
         webviewPath: cameraPhoto.webPath
@@ -99,11 +80,8 @@ export class PhotoService {
     }
   }
 
-  // Read camera photo into base64 format based on the platform the app is running on
   private async readAsBase64(cameraPhoto: CameraPhoto) {
-    // "hybrid" will detect Cordova or Capacitor
     if (this.platform.is('hybrid')) {
-      // Read the file into base64 format
       const file = await Filesystem.readFile({
         path: cameraPhoto.path
       });
@@ -111,7 +89,6 @@ export class PhotoService {
       return file.data;
     }
     else {
-      // Fetch the photo, read as a blob, then convert to base64 format
       const response = await fetch(cameraPhoto.webPath!);
       const blob = await response.blob();
 
@@ -119,18 +96,16 @@ export class PhotoService {
     }
   }
 
-  // Delete picture by removing it from reference data and the filesystem
+  
   public async deletePicture(photo: Photo, position: number) {
-    // Remove this photo from the Photos reference data array
+    
     this.photos.splice(position, 1);
 
-    // Update photos array cache by overwriting the existing photo array
+    
     Storage.set({
       key: this.PHOTO_STORAGE,
       value: JSON.stringify(this.photos)
     });
-
-    // delete photo file from filesystem
     const filename = photo.filepath.substr(photo.filepath.lastIndexOf('/') + 1);
     await Filesystem.deleteFile({
       path: filename,
@@ -148,7 +123,6 @@ export class PhotoService {
   });
 
   showHideAutoLoader() {
-
     this.loadingController.create({
       message: 'Please wait...',
       duration: 1000
@@ -161,6 +135,28 @@ export class PhotoService {
     });
 
   }
+
+  showLoader() {
+
+    this.loadingController.create({
+      message: 'Please wait...'
+    }).then((res) => {
+      res.present();
+    });
+
+  }
+
+  // Hide the loader if already created otherwise return error
+  hideLoader() {
+
+    this.loadingController.dismiss().then((res) => {
+      console.log('Loading dismissed!', res);
+    }).catch((error) => {
+      console.log('error', error);
+    });
+
+  }
+
 }
 
 
